@@ -11,6 +11,7 @@ def updateFederationResources(federationResouce, cp):
 
 if __name__ == "__main__":
     
+    print("GIT experiment")
     federation = []
     federationResouce = {"availableCores" : 0, "availableMemory" : 0, "availableStorage" : 0}
     cp1 = cloudProvider.cloudProvider("cp1", 1024, 1740, 225)
