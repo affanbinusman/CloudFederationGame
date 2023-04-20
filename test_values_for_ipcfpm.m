@@ -1,3 +1,5 @@
+clc
+clear
 availableResourcesInFed = [409, 696, 90; 
      409, 696, 90; 
      409, 696, 90; 
@@ -12,4 +14,5 @@ vmInfo =  [1., 1.7, 0.22, 0.12;
  2., 3.75, 0.48, 0.24;
  4., 7.5, 0.98, 0.48;
  8., 15., 1.99, 0.96];
-userRequest = [1 0 2 3];
+userRequest = [100 50 200 50];
+[x, profit] = ipCfpm(availableResourcesInFed, costsOfCPsInFed, vmInfo, userRequest)
