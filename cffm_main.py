@@ -2,6 +2,11 @@ import cloudProvider
 import virtualMachine
 import userRequest
 from collections import defaultdict
+import matlab
+import matlab.engine
+import MergeFederations
+import SplitFederation
+import BanzhafValue
 
 import numpy as np
 
@@ -81,8 +86,9 @@ if __name__ == "__main__":
     
 
     ## Cloud Federation Structure
-    allFederations = [[1,2,3,4,5,6],[7,8]]
-
+    # allFederations = [[1,2,3,4,5,6],[7,8]]
+    FederationsStructure = [[1], [2], [3], [4], [5], [6], [7], [8]]
+    
     '''
     we have 
     [[1,2,3,4,5,6]]
@@ -104,3 +110,29 @@ if __name__ == "__main__":
     print("availableResourcesInFed : \n", availableResourcesInFed)
     print("="*80)
     print("costsOfCPsInFed : \n", costsOfCPsInFed)
+
+    # Algo 1
+    V_Check = 0
+    V_CheckProfit = list()
+    for i in FederationsStructure:
+        eng = matlab.engine.start_matlab()
+        V_CheckProfit.append(eng.ipCfpm(i, availableResourcesInFed, costsOfCPsInFed, vmInfo, ur1, nargout = 1))
+        V_Check += 1
+    
+    checkMSFlag = True
+    checkedMergeFed = defaultdict()
+    while checkMSFlag:
+        FederationsStructure, checkedMergeFed, V_CheckProfit = MergeFederations.MergeFederations(FederationsStructure, checkedMergeFed, V_CheckProfit)
+        currLength = len(FederationsStructure)
+        FederationsStructure, V_CheckProfit = SplitFederation.SplitFederation(FederationsStructure, V_CheckProfit)
+        if currLength == len(FederationsStructure):
+            break
+    
+
+    maxFederation = np.argmax(V_CheckProfit)
+
+    for F in FederationsStructure[maxFederation]:
+        BV = BanzhafValue.BanzhafValue()
+        # Ouput result // VM types + Numbers by each cloud provider Ci in the Federation Fk
+
+

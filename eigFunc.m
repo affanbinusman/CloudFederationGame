@@ -33,7 +33,7 @@ c = y;
 
 x = "it workssss";
 y = 006900;
-% [V, D] = eig(A);
+[V, D] = eig(A);
 V = A
 end
 
