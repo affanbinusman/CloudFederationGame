@@ -15,8 +15,6 @@ def updateFederationResources(federationResouce, cp):
 
 if __name__ == "__main__":
     
-
-
     # print("Entering")
     ## Adding a sample comment
     federation = []
