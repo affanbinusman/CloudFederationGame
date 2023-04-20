@@ -1,63 +1,120 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
-class CloudProvider:
+# Define the number of cloud providers
+n = 10
 
-    def __init__(self, name, cost_of_resources, revenue_per_unit_resource):
-        self.name = name
-        self.cost_of_resources = cost_of_resources
-        self.revenue_per_unit_resource = revenue_per_unit_resource
+# Define the set of resources that each cloud provider can offer
+resources = {i: np.arange(10) for i in range(n)}
 
-    def profit(self, other_cloud_provider):
-        # This function calculates the profit that this cloud provider would make if it were to join the federation with the other cloud provider.
-        # The profit is calculated as the difference between the revenue that the cloud provider would generate from the federation and the cost of the resources that it would need to provide.
-        profit = self.revenue_per_unit_resource * other_cloud_provider.cost_of_resources - self.cost_of_resources
-        return profit
+# Define the profit function for each cloud provider
+def profit(provider, federation):
+    # Get the resources that the cloud provider can offer to the federation
+    resources_offered = resources[provider]
 
-    def best_response(self, payoff_matrix):
-        # This function returns the best choice that this cloud provider would make given the payoff matrix.
-        # The best choice is the cloud provider that would give the cloud provider the highest profit.
-        best_choice = np.argmax(payoff_matrix[self])
-        return best_choice
+    # Get the demand for resources in the federation
+    demand = np.sum(federation)
 
-class CloudFederationGame:
+    # Calculate the profit of the cloud provider
+    profit = np.sum(resources_offered[demand > 0])
 
-    def __init__(self, cloud_providers):
-        self.cloud_providers = cloud_providers
-        self.num_cloud_providers = len(cloud_providers)
-        self.payoffs = np.zeros((self.num_cloud_providers, self.num_cloud_providers))
+    return profit
 
-    def calculate_payoffs(self):
-        # This function calculates the payoff matrix for the cloud federation game.
-        # The payoff matrix is a square matrix where the entry in row i and column j represents the profit that cloud provider i would make if it were to join the federation with cloud provider j.
-        for i in range(self.num_cloud_providers):
-            for j in range(self.num_cloud_providers):
-                if i == j:
-                    continue
-                self.payoffs[i][j] = self.cloud_providers[i].profit(self.cloud_providers[j])
+# Define the cloud federation formation game
+def cloud_federation_formation_game(resources):
+    # Create a list of cloud providers
+    providers = list(range(n))
 
-    def solve(self):
-        # This function finds the stable cloud federation.
-        # The stable cloud federation is a set of cloud providers that cannot be improved by adding or removing any cloud providers.
-        stable_cloud_federation = []
-        while len(stable_cloud_federation) < self.num_cloud_providers:
-            for i in range(self.num_cloud_providers):
-                if i not in stable_cloud_federation:
-                    best_choice = self.cloud_providers[i].best_response(self.payoffs[i])
-                    if best_choice not in stable_cloud_federation:
-                        stable_cloud_federation.append(i)
-                        stable_cloud_federation.append(best_choice)
-                        break
-        return stable_cloud_federation
+    # Initialize the profit of each cloud provider
+    profits = {}
+    for provider in providers:
+        profits[provider] = 0
+
+    # Initialize the cloud federation
+    federation = np.zeros(n)
+
+    # Initialize the previous cloud federation
+    federation_prev = federation.copy()
+
+    # Repeat until the cloud federation is stable
+    while True:
+        # For each cloud provider
+        for provider in providers:
+            # Get the profit of the cloud provider if it joins the current federation
+            profit_if_joined = profit(provider, federation)
+
+            # If the cloud provider can improve its profit by joining the federation
+            if profit_if_joined > profits[provider]:
+                # Join the federation
+                federation[provider] = 1
+                profits[provider] = profit_if_joined
+
+        # If the cloud federation has not changed, then it is stable
+        if np.array_equal(federation, federation_prev):
+            break
+
+        # Update the previous federation
+        federation_prev = federation.copy()
+
+    # Return the cloud federation
+    return federation
+
+# Define the cloud federation formation mechanism
+def cloud_federation_formation_mechanism(resources):
+    # Create a list of cloud providers
+    providers = list(range(n))
+
+    profits = {}
+    for provider in providers:
+        profits[provider] = 0
+
+    # Initialize the bid of each cloud provider
+    bids = {}
+    for provider in providers:
+        bids[provider] = 0
     
+    # Initialize the cloud federation
+    federation = np.zeros(n)
 
-cloud_providers = [
-    CloudProvider("Amazon Web Services", 100, 10),
-    CloudProvider("Microsoft Azure", 200, 20),
-    CloudProvider("Google Cloud Platform", 300, 30),
-]
+    # Initialize the previous cloud federation
+    federation_prev = federation.copy()
 
-cloud_federation_game = CloudFederationGame(cloud_providers)
+    # Repeat until the cloud federation is formed
+    while True:
+        # For each cloud provider
+        for provider in providers:
+            # Get the profit of the cloud provider if it joins the current federation
+            profit_if_joined = profit(provider, federation)
 
-stable_cloud_federation = cloud_federation_game.solve()
+            # Set the bid of the cloud provider
+            bid = profit_if_joined - profits[provider]
 
-print(stable_cloud_federation)
+            # If the bid of the cloud provider is greater than the previous bid, then the cloud provider wins the auction
+            if bid > bids[provider]:
+                bids[provider] = bid
+                winner = provider
+
+        # If the cloud federation has been formed, then break
+        if len(federation) == n:
+            break
+
+        # Add the winning cloud provider to the federation
+        federation[winner] = 1
+
+        # Update the previous federation
+        federation_prev = federation.copy()
+
+    # Return the cloud federation
+    return federation
+
+# Run the cloud federation formation game
+federation = cloud_federation_formation_game(resources)
+
+# Print the cloud federation
+print(federation)
+
+# Run the cloud federation formation mechanism
+federation = cloud_federation_formation_mechanism(resources)
+
+# Print the cloud federation
+print(federation)
