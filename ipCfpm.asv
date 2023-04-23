@@ -95,7 +95,7 @@ function [x, profit] = ipCfpm(availableResourcesInFed, costsOfCPsInFed, vmInfo, 
 
     % solver settings
     opt=sdpsettings('solver','gurobi','verbose',0);
-    optimize(cons,-objective,opt);
+    optimize(cons,-objective,opt)
 
     % federation profit
     profit = value(objective);
