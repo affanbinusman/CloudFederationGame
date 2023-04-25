@@ -32,7 +32,8 @@ def OptimizerSolver(availableResourcesInFed, costsOfCPsInFed, userRequest, vmInf
         x, profit = eng.ipCfpm(availableResourcesInFed, costsOfCPsInFed, vmInfo, userRequest, nargout=2)
         
         if profit == 0:
-            print("Problem not solvable")
+            pass
+            #print("Problem not solvable")
         else:
             x = np.array(x).round()
             
@@ -69,8 +70,6 @@ def mergeFederations(FS, profitList, userRequest):
     checked = []
 
     i = 0
-    print()
-    print()
     while (i < len(FS)):
         j = i + 1
         curr_length = len(FS)
@@ -97,8 +96,35 @@ def mergeFederations(FS, profitList, userRequest):
 
     return FS, profitList
 
-def splitFederations(FS_algo1_3, V_CheckProfit, userRequest):
-    pass
+def splitFederations(FS, profitList, userRequest):
+    i = 0
+    while (i < len(FS)):
+        print()
+        keysList = list(FS.keys())
+        print(FS[keysList[i]])
+        if len(FS[keysList[i]]) > 1:
+            availableResourcesInFed, costsOfCPsInFed = fed_res_cost(FS[keysList[i]])
+            _, profit = OptimizerSolver(availableResourcesInFed, costsOfCPsInFed, userRequest)
+            
+            for x in range(len(FS[keysList[i]])):
+                if x == 0:
+                    Fj = list()
+                    Fj.append (FS[keysList[i]][x])
+                    availableResourcesInFed, costsOfCPsInFed = fed_res_cost(Fj)
+                    _, FjProfit = OptimizerSolver(availableResourcesInFed, costsOfCPsInFed, userRequest)
+                    
+                    Fk = list(FS[keysList[i]][x+1:])
+                    availableResourcesInFed, costsOfCPsInFed = fed_res_cost(Fk)
+                    _, FkProfit = OptimizerSolver(availableResourcesInFed, costsOfCPsInFed, userRequest)
+                    
+                if FjProfit >= profit or FkProfit >= profit:
+                    print("split here")
+
+            # pass
+        
+        i += 1
+
+    return FS, profitList
 
 
 if __name__ == "__main__":
@@ -197,14 +223,13 @@ if __name__ == "__main__":
         
         curr_length = len(FS_algo1_2)
         # Call SPlit federations
-        # FS_algo1_2, V_CheckProfit = splitFederations(FS_algo1_2, V_CheckProfit, userRequest1)
-        print("After Merge")
-        print(FS_algo1_2)
+        FS_algo1_3, V_CheckProfit = splitFederations(FS_algo1_2, V_CheckProfit, userRequest1)
+        print("After Split")
+        print(FS_algo1_3)
         print(V_CheckProfit)
 
-        new_length = len(FS_algo1_2)
-
-        if new_length == curr_length:
+        if len(FS_algo1_2) == len(FS_algo1_3):
+        # if len(FS_algo1_2) == len(FS_algo1_2):
             break
             
     # Do this at the end of the program
