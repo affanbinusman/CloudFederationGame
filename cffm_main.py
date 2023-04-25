@@ -13,7 +13,17 @@ import numpy as np
 
 eng = matlab.engine.start_matlab()
 
-def OptimizerSolver(availableResourcesInFed, costsOfCPsInFed, vmInfo, userRequest):
+'''
+    The following variable vmInfo contains the information of 
+    all 4 VM types(S, M, L, XL) and 
+    their 4 attributes(cores, memory, storage, price) respectively
+    '''
+vmInfo = np.array([[1, 1.7, 0.22, 0.12],\
+                    [2, 3.75, 0.48, 0.24],\
+                    [4, 7.5, 0.98, 0.48],\
+                    [8, 15, 1.99, 0.96]])
+
+def OptimizerSolver(availableResourcesInFed, costsOfCPsInFed, userRequest, vmInfo = vmInfo):
         
         availableResourcesInFed = matlab.double(availableResourcesInFed)
         costsOfCPsInFed = matlab.double(costsOfCPsInFed)
@@ -36,6 +46,60 @@ def updateFederationResources(federationResouce, cp):
     federationResouce["availableMemory"] += int(cp.availableMemory * 0.4)
     federationResouce["availableStorage"] += int(cp.availableStorage * 0.4)
     return federationResouce
+
+def fed_res_cost(federation):
+    availableResourcesInFed = []
+    costsOfCPsInFed = []
+    # print(len(federation))
+    # if len(federation) == 0:
+    #     return 0, 0
+    for i in range(len(federation)):
+        cp = federation[i]
+        resOfThisCP = [int(cp.availableCores*0.4), int(cp.availableMemory*0.4), int(cp.availableStorage*0.4)]
+        availableResourcesInFed.append(resOfThisCP)
+        costsOfCPsInFed.append(cp.costList)
+
+    # print("availableResourcesInFed : \n", availableResourcesInFed)
+    # print("="*80)
+    # print("costsOfCPsInFed : \n", costsOfCPsInFed)
+
+    return availableResourcesInFed, costsOfCPsInFed
+
+def mergeFederations(FS, profitList, userRequest):
+    checked = []
+
+    i = 0
+    print()
+    print()
+    while (i < len(FS)):
+        j = i + 1
+        curr_length = len(FS)
+
+        while(j < len(FS)):
+
+            keysList = list(FS.keys())
+            combinedF = FS[keysList[i]].copy()
+            combinedF += FS[keysList[j]]
+            
+            availableResourcesInFed, costsOfCPsInFed = fed_res_cost(combinedF)
+            _, profit = OptimizerSolver(availableResourcesInFed, costsOfCPsInFed, userRequest)
+            
+            if (profit > profitList[i] and profit > profitList[j]) \
+                or (profit == 0 and profitList[i]==0 and profitList[j]==0):
+                profitList[i] = profit
+                profitList.pop(j)
+                FS[keysList[i]] = combinedF
+                del FS[keysList[j]]
+            else:
+                j += 1 
+
+        i += 1
+
+    return FS, profitList
+
+def splitFederations(FS_algo1_3, V_CheckProfit, userRequest):
+    pass
+
 
 if __name__ == "__main__":
     
@@ -89,24 +153,12 @@ if __name__ == "__main__":
     inputToOptimizer = []
 
     ur1 = userRequest.userRequest(1, 0, 2, 3)
-    userRequest1 = np.array([100.0, 50.0, 200.0, 50.0])
-    userRequest1 = np.array([1.0, 0.0, 0.0, 0.0])
+    userRequest1 = np.array([40.0, 40.0, 40.0, 70.0])
+    # userRequest1 = np.array([1.0, 0.0, 0.0, 0.0])
     
-
-    '''
-    The following variable vmInfo contains the information of 
-    all 4 VM types(S, M, L, XL) and 
-    their 4 attributes(cores, memory, storage, price) respectively
-    '''
-    vmInfo = np.array([[1, 1.7, 0.22, 0.12],\
-                       [2, 3.75, 0.48, 0.24],\
-                       [4, 7.5, 0.98, 0.48],\
-                       [8, 15, 1.99, 0.96]])
-    
-
     ## Cloud Federation Structure
     # allFederations = [[1,2,3,4,5,6],[7,8]]
-    FS = [[1], [2], [3], [4], [5], [6, 7], [8]]
+    # FS = [[1], [2], [3], [4], [5], [6, 7], [8]]
     FS = { 1: [federation[0]],
           2: [federation[1]],
           3: [federation[2]],
@@ -116,63 +168,44 @@ if __name__ == "__main__":
           7: [federation[6]],
           8: [federation[7]]
     }
-    # print(FS)
-    '''
-    we have 
-    [[1,2,3,4,5,6]]
-
-    6 X [[cor, mem, storag]] -> available Resoursec
-    6 X [4] -> costs of 4 VMs in each CP
-    '''
-    # this is for just 1 federation with 6 CPs
-    def fed_res_cost(federation):
-        availableResourcesInFed = []
-        costsOfCPsInFed = []
-        # print(len(federation))
-        for i in range(len(federation)):
-            cp = federation[i]
-            resOfThisCP = [int(cp.availableCores*0.4), int(cp.availableMemory*0.4), int(cp.availableStorage*0.4)]
-            availableResourcesInFed.append(resOfThisCP)
-            costsOfCPsInFed.append(cp.costList)
-
-        # print("availableResourcesInFed : \n", availableResourcesInFed)
-        # print("="*80)
-        # print("costsOfCPsInFed : \n", costsOfCPsInFed)
-
-        return availableResourcesInFed, costsOfCPsInFed
-
-
-    # availableResourcesInFed, costsOfCPsInFed = fed_res_cost(federation)
-    # OptimizerSolver(availableResourcesInFed, costsOfCPsInFed, vmInfo, userRequest1)
     
-
     # Algo 1
     V_Check = 0
     V_CheckProfit = list()
     for i in FS:
-        # print("federation: ", federation)
-        # print("federation[i] :", federation[i])
         availableResourcesInFed, costsOfCPsInFed = fed_res_cost(FS[i])
-        _, profit = OptimizerSolver(availableResourcesInFed, costsOfCPsInFed, vmInfo, userRequest1)
+        _, profit = OptimizerSolver(availableResourcesInFed, costsOfCPsInFed, userRequest1)
         V_CheckProfit.append(profit)
         V_Check += 1
     
     print(V_CheckProfit)
-    # checkMSFlag = True
-    # checkedMergeFed = defaultdict()
-    # while checkMSFlag:
-    #     FS, checkedMergeFed, V_CheckProfit = MergeFederations.MergeFederations(FS, checkedMergeFed, V_CheckProfit)
-    #     currLength = len(FS)
-    #     FS, V_CheckProfit = SplitFederation.SplitFederation(FS, V_CheckProfit)
-    #     if currLength == len(FS):
-    #         break
-    
 
-    # maxFederation = np.argmax(V_CheckProfit)
+    FS_algo1_2 = FS.copy()
+    while(1):
+         
+         
+        # call Merge Federations
+        FS_algo1_2, V_CheckProfit = mergeFederations(FS_algo1_2, V_CheckProfit, userRequest1)
+        print("After Merge")
+        print(FS_algo1_2)
+        print(V_CheckProfit)
+            
+        if len(V_CheckProfit) == 1:
+            if V_CheckProfit[0] == 0:
+                print("Problem too big to be solved by Grand Federation")
+                break
+        
+        curr_length = len(FS_algo1_2)
+        # Call SPlit federations
+        # FS_algo1_2, V_CheckProfit = splitFederations(FS_algo1_2, V_CheckProfit, userRequest1)
+        print("After Merge")
+        print(FS_algo1_2)
+        print(V_CheckProfit)
 
-    # for F in FS[maxFederation]:
-    #     BV = BanzhafValue.BanzhafValue()
-    #     # Ouput result // VM types + Numbers by each cloud provider Ci in the Federation Fk
+        new_length = len(FS_algo1_2)
 
+        if new_length == curr_length:
+            break
+            
     # Do this at the end of the program
     eng.quit()

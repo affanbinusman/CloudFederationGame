@@ -4,7 +4,7 @@ function [x, profit] = ipCfpm(availableResourcesInFed, costsOfCPsInFed, vmInfo, 
     
     p = vmInfo(:,4); %pricelist
     c = costsOfCPsInFed';    %costlist
-    
+
     N = availableResourcesInFed(:,1);
     M = availableResourcesInFed(:,2);
     S = availableResourcesInFed(:,3);
