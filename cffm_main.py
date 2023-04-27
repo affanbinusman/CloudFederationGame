@@ -85,6 +85,7 @@ def mergeFederations(FS, profitList, userRequest):
             
             if (profit > profitList[i] and profit > profitList[j]) \
                 or (profit == 0 and profitList[i]==0 and profitList[j]==0):
+                print("\n\n", i, j)
                 profitList[i] = profit
                 profitList.pop(j)
                 FS[keysList[i]] = combinedF
@@ -97,35 +98,88 @@ def mergeFederations(FS, profitList, userRequest):
     return FS, profitList
 
 def splitFederations(FS, profitList, userRequest):
-    i = 0
-    while (i < len(FS)):
-        print()
-        keysList = list(FS.keys())
-        print(FS[keysList[i]])
-        if len(FS[keysList[i]]) > 1:
-            availableResourcesInFed, costsOfCPsInFed = fed_res_cost(FS[keysList[i]])
-            _, profit = OptimizerSolver(availableResourcesInFed, costsOfCPsInFed, userRequest)
+    res = defaultdict()
+    newProfitList = list()
+
+    for iVal, kVal in enumerate(FS):
+        flag = False
+        currentFed = FS[kVal]
+        if len(currentFed) > 1:
+            combinedProfit = profitList[iVal]
             
-            for x in range(len(FS[keysList[i]])):
-                if x == 0:
-                    Fj = list()
-                    Fj.append (FS[keysList[i]][x])
+            if combinedProfit != 0:
+                for i in range(len(currentFed)):
+                    
+                    Fj = [currentFed[i]]
                     availableResourcesInFed, costsOfCPsInFed = fed_res_cost(Fj)
-                    _, FjProfit = OptimizerSolver(availableResourcesInFed, costsOfCPsInFed, userRequest)
+                    x, profitFj = OptimizerSolver(availableResourcesInFed, costsOfCPsInFed, userRequest)
                     
-                    Fk = list(FS[keysList[i]][x+1:])
+                    Fk = currentFed[0:i] + currentFed[i+1:]
                     availableResourcesInFed, costsOfCPsInFed = fed_res_cost(Fk)
-                    _, FkProfit = OptimizerSolver(availableResourcesInFed, costsOfCPsInFed, userRequest)
+                    x2, profitFk = OptimizerSolver(availableResourcesInFed, costsOfCPsInFed, userRequest)
                     
-                if FjProfit >= profit or FkProfit >= profit:
-                    print("split here")
-
-            # pass
+                    if profitFj >= combinedProfit or profitFk >= combinedProfit:
+                        res[kVal] = Fj
+                        newProfitList.append(profitFj)
+                        for index in range(1, list(FS.keys())[-1] + 2):     # FS is not dynamically being updated
+                            if index not in list(FS.keys()):
+                                dictttttt = {0:Fj}
+                                writename(dictttttt)
+                                dictttttt = {0:Fk}
+                                writename(dictttttt)
+                                res[index] = Fk
+                                newProfitList.append(profitFk)
+                                print("\nthis is x1", x)
+                                print("\nthis is x2", x2)
+                                break
+                        flag = True
+                        break
+            if flag == False:
+                res[kVal] = FS[kVal]
+                newProfitList.append(profitList[iVal])
+        else: 
+            res[kVal] = FS[kVal]
+            newProfitList.append(profitList[iVal])
         
-        i += 1
+    return res, newProfitList
 
-    return FS, profitList
+        # print()
+        # keysList = list(FS.keys())
+        # print(FS[keysList[i]])
+        # if len(FS[keysList[i]]) > 1:
+        #     availableResourcesInFed, costsOfCPsInFed = fed_res_cost(FS[keysList[i]])
+        #     _, profit = OptimizerSolver(availableResourcesInFed, costsOfCPsInFed, userRequest)
+            
+        #     for x in range(len(FS[keysList[i]])):
+        #         if x == 0:
+        #             Fj = list()
+        #             Fj.append (FS[keysList[i]][x])
+        #             availableResourcesInFed, costsOfCPsInFed = fed_res_cost(Fj)
+        #             _, FjProfit = OptimizerSolver(availableResourcesInFed, costsOfCPsInFed, userRequest)
+                    
+        #             Fk = list(FS[keysList[i]][x+1:])
+        #             availableResourcesInFed, costsOfCPsInFed = fed_res_cost(Fk)
+        #             _, FkProfit = OptimizerSolver(availableResourcesInFed, costsOfCPsInFed, userRequest)
+                    
+        #         if FjProfit >= profit or FkProfit >= profit:
+        #             print("split here")
 
+        #     # pass
+        
+        # i += 1
+
+    #return FS, profitList
+
+def writename(FS_algo1_2):
+        l = list()
+        for i in FS_algo1_2:
+            print("This is Federation ", i)
+            _ = [print(j.name) for j in FS_algo1_2[i]]
+        print("-"*60)
+        #     for j in i:
+        #         l.append(i[j].name)
+        
+        # print(l)
 
 if __name__ == "__main__":
     
@@ -179,8 +233,8 @@ if __name__ == "__main__":
     inputToOptimizer = []
 
     ur1 = userRequest.userRequest(1, 0, 2, 3)
-    userRequest1 = np.array([40.0, 40.0, 40.0, 70.0])
-    # userRequest1 = np.array([1.0, 0.0, 0.0, 0.0])
+    # userRequest1 = np.array([40.0, 40.0, 40.0, 70.0])
+    userRequest1 = np.array([40.0, 20.0, 20.0, 30.0])
     
     ## Cloud Federation Structure
     # allFederations = [[1,2,3,4,5,6],[7,8]]
@@ -212,8 +266,9 @@ if __name__ == "__main__":
          
         # call Merge Federations
         FS_algo1_2, V_CheckProfit = mergeFederations(FS_algo1_2, V_CheckProfit, userRequest1)
+        print()
         print("After Merge")
-        print(FS_algo1_2)
+        writename(FS_algo1_2)
         print(V_CheckProfit)
             
         if len(V_CheckProfit) == 1:
@@ -223,13 +278,15 @@ if __name__ == "__main__":
         
         curr_length = len(FS_algo1_2)
         # Call SPlit federations
-        FS_algo1_3, V_CheckProfit = splitFederations(FS_algo1_2, V_CheckProfit, userRequest1)
+        FS_algo1_2, V_CheckProfit = splitFederations(FS_algo1_2, V_CheckProfit, userRequest1)
+        print()
         print("After Split")
-        print(FS_algo1_3)
+        # print(FS_algo1_2)
+        writename(FS_algo1_2)
         print(V_CheckProfit)
 
-        if len(FS_algo1_2) == len(FS_algo1_3):
-        # if len(FS_algo1_2) == len(FS_algo1_2):
+        # if len(FS_algo1_2) == len(FS_algo1_3):
+        if curr_length == len(FS_algo1_2):
             break
             
     # Do this at the end of the program

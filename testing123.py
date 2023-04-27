@@ -1,8 +1,9 @@
-d = {1: 2, 2: 3, 3:4}
+d = {}
+
+d[1] = "a"
+d[3] = "c"
+d[2] = "b"
 
 print(d)
-k = list(d.keys())[1]
-del d[k]
-# del d[d.keys[1]]
-print(d)
+
 
