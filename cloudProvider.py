@@ -3,9 +3,9 @@
 class cloudProvider:
     def __init__(self, name, availableCores, availableMemory, availableStorage, costList):
         self.name = name
-        self.availableCores = availableCores
-        self.availableMemory = availableMemory
-        self.availableStorage = availableStorage
+        self.availableCores = int(availableCores)
+        self.availableMemory = int(availableMemory)
+        self.availableStorage = int(availableStorage)
         self.costList = costList
 
     # def assign(self, userRequest):
