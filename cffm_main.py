@@ -1,17 +1,11 @@
 import cloudProvider
-import virtualMachine
-import userRequest
 from collections import defaultdict
 import matlab
 import matlab.engine
-import MergeFederations
-import SplitFederation
 import matplotlib.pyplot as plt
-# import BanzhafValue
-# import OptimizerSolver
-
 import numpy as np
 
+noOfTestCases = 10
 eng = matlab.engine.start_matlab()
 
 '''
@@ -33,14 +27,11 @@ def OptimizerSolver(availableResourcesInFed, costsOfCPsInFed, userRequest, vmInf
         x, profit = eng.ipCfpm(availableResourcesInFed, costsOfCPsInFed, vmInfo, userRequest, nargout=2)
         
         if profit == 0:
+            # print("Problem not solvable")
             pass
-            #print("Problem not solvable")
         else:
             x = np.array(x).round()
-            
-            # print()
-            # # print(x)
-            # print(profit)
+
         return x, profit
 
 def updateFederationResources(federationResouce, cp):
@@ -52,28 +43,19 @@ def updateFederationResources(federationResouce, cp):
 def fed_res_cost(federation):
     availableResourcesInFed = []
     costsOfCPsInFed = []
-    # print(len(federation))
-    # if len(federation) == 0:
-    #     return 0, 0
     for i in range(len(federation)):
         cp = federation[i]
         resOfThisCP = [int(cp.availableCores*0.4), int(cp.availableMemory*0.4), int(cp.availableStorage*0.4)]
         availableResourcesInFed.append(resOfThisCP)
         costsOfCPsInFed.append(cp.costList)
 
-    # print("availableResourcesInFed : \n", availableResourcesInFed)
-    # print("="*80)
-    # print("costsOfCPsInFed : \n", costsOfCPsInFed)
-
     return availableResourcesInFed, costsOfCPsInFed
 
 def mergeFederations(FS, profitList, userRequest):
-    checked = []
 
     i = 0
     while (i < len(FS)):
         j = i + 1
-        curr_length = len(FS)
 
         while(j < len(FS)):
 
@@ -86,7 +68,6 @@ def mergeFederations(FS, profitList, userRequest):
             
             if (profit > profitList[i] and profit > profitList[j]) \
                 or (profit == 0 and profitList[i]==0 and profitList[j]==0):
-                # print("\n\n", i, j)
                 profitList[i] = profit
                 profitList.pop(j)
                 FS[keysList[i]] = combinedF
@@ -124,10 +105,6 @@ def splitFederations(FS, profitList, userRequest):
                         newProfitList.append(profitFj)
                         for index in range(1, list(FS.keys())[-1] + 200):     # FS is not dynamically being updated & issue with Fk
                             if (index not in list(FS.keys())) and (index not in list(res.keys())):
-                                # dictttttt = {0:Fj}
-                                # writename(dictttttt)
-                                # dictttttt = {0:Fk}
-                                # writename(dictttttt)
                                 res[index] = Fk
                                 newProfitList.append(profitFk)
                                 break
@@ -144,19 +121,14 @@ def splitFederations(FS, profitList, userRequest):
 
 def writename(FS_algo1_2):
         l = list()
-        # print("-"*60)
         for i in FS_algo1_2:
             print("This is Federation ", i)
             _ = [print(j.name) for j in FS_algo1_2[i]]
 
 def myMain(userRequest1):
     
-    # print("Entering")
-    ## Adding a sample comment
     federation = []
     federationResouce = {"availableCores" : 0, "availableMemory" : 0, "availableStorage" : 0}
-
-    priceList = [0.12, 0.24, 0.48, 0.96]
 
     cl1 = [0.03, 0.06, 0.12, 0.24]
     cp1 = cloudProvider.cloudProvider("cp1", 1024*0.25, 1740*0.25, 225*0.25, cl1)
@@ -197,12 +169,8 @@ def myMain(userRequest1):
     cp8 = cloudProvider.cloudProvider("cp8", 1024*1.5, 1740*1.5, 225*1.5, cl8)
     federation.append(cp8)
     federationResouce = updateFederationResources(federationResouce, cp8)
-   
-    inputToOptimizer = []
 
-    ## Cloud Federation Structure
-    # allFederations = [[1,2,3,4,5,6],[7,8]]
-    # FS = [[1], [2], [3], [4], [5], [6, 7], [8]]
+    # Cloud Federation Structure
     FS = { 1: [federation[0]],
           2: [federation[1]],
           3: [federation[2]],
@@ -226,8 +194,8 @@ def myMain(userRequest1):
     initialMax = max(V_CheckProfit)
 
     FS_algo1_2 = FS.copy()
+    
     while(1):
-         
          
         # call Merge Federations
         FS_algo1_2, V_CheckProfit = mergeFederations(FS_algo1_2, V_CheckProfit, userRequest1)
@@ -235,7 +203,7 @@ def myMain(userRequest1):
         print("-"*60)
         print("After Merge, the Federation Structure includes:")
         writename(FS_algo1_2)
-        print("With the following profit list")
+        print("\nWith the following profit list")
         print(V_CheckProfit)
             
         if len(V_CheckProfit) == 1:
@@ -244,17 +212,16 @@ def myMain(userRequest1):
                 break
         
         curr_length = len(FS_algo1_2)
+        
         # Call SPlit federations
         FS_algo1_2, V_CheckProfit = splitFederations(FS_algo1_2, V_CheckProfit, userRequest1)
         print()
         print("-"*60)
         print("After Split, the Federation Structure includes:")
-        # print(FS_algo1_2)
         writename(FS_algo1_2)
-        print("With the following profit list")
+        print("\nWith the following profit list")
         print(V_CheckProfit)
 
-        # if len(FS_algo1_2) == len(FS_algo1_3):
         if curr_length == len(FS_algo1_2):
             break
     
@@ -266,21 +233,19 @@ def myMain(userRequest1):
     print("-"*60)
     print("Finally, the follow Federation allocates & provides the requested VM instances.\n")
     print("Maximum Profit:", maxProfit)
-    # print(maxProfitIndex)
     maxProfitKey = list(FS_algo1_2.keys())[maxProfitIndex]
     maxProfitFed = FS_algo1_2[maxProfitKey]
     writename({maxProfitKey: maxProfitFed})
-    # Do this at the end of the program
+    print("-"*60)
+    print("-"*60)
+    print("-"*60)
+    print()
     return initialMax, maxProfit
 
 if __name__ == "__main__":
-    # ur1 = userRequest.userRequest(1, 0, 2, 3)
-    # userRequest1 = np.array([40.0, 40.0, 40.0, 70.0])
-    # userRequest1 = np.array([40.0, 20.0, 20.0, 30.0])
-    # userRequest1 = np.array([20.0, 20.0, 50.0, 25.0])
+    
     initialMax, maxProfit, reqNames, ureqs = list(), list(), list(), list()
-
-    for i in range(10):
+    for i in range(noOfTestCases):
         s = float(np.random.randint(20,50))
         m = float(np.random.randint(10,50))
         l = float(np.random.randint(15,40))
@@ -301,7 +266,6 @@ if __name__ == "__main__":
     fig, ax = plt.subplots()
     rects1 = ax.bar(reqNames, initialMax, bar_width, label='Individual Max Profit')
     rects2 = ax.bar([req + bar_width for req in reqNames], maxProfit, bar_width, label='Federation Max Profit')
-    # rects2 = ax.bar([req for req in reqNames], maxProfit, bar_width, label='Federation Max Profit')
     
     # Adding labels and legend
     ax.set_xlabel('User Requests')
@@ -309,11 +273,10 @@ if __name__ == "__main__":
     ax.set_title('Profit Comparison')
     ax.set_xticks([month + bar_width/2 for month in range(len(reqNames)+1)])
     ax.set_yticks([i for i in range(0, int(max(maxProfit))+20, 10)])
-    # reqNames.append(len(reqNames) + 1)
     reqNames = [0] + reqNames
     ax.set_xticklabels(reqNames)
     ax.legend()
-
     plt.show()
-
+    
+    # Do this at the end of the program
     eng.quit()

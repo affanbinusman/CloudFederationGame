@@ -15,42 +15,6 @@ function [x, profit] = ipCfpm(availableResourcesInFed, costsOfCPsInFed, vmInfo, 
     w_m = vmInfo(:,2);    
     w_s = vmInfo(:,3);    
     
-
-    %% cvx implementation: has bugs
-    % cvx_begin
-    %     cvx_solver gurobi
-    %     variable x(m,n) integer;
-    %     objective = 0;
-    % 
-    %     for i = 1:m
-    %         objective = objective + x(i,:)*(p-c(:,i));
-    %     end
-    %     maximize(objective)
-    %     subject to
-    %         for i = 1:m
-    %             x(i,:)*w_c<=N(i);
-    %         end
-    %         for i = 1:m
-    %             x(i,:)*w_m<=M(i);
-    %         end
-    %         for i = 1:m
-    %             x(i,:)*w_s<=S(i);
-    %         end
-    % 
-    %         for j = 1:n
-    %             sum(x(:,j))==r(:,j);
-    %         end
-    % 
-    %         for i=1:m 
-    %             sum(x(i,:))>=1;
-    %         end
-    %         for i = 1:m
-    %             for j = 1:n
-    %                 x(i,j)>=0;
-    %             end
-    %         end
-    % cvx_end
-    
     %% YALMIP implementation
     x = intvar(m,n);
 
@@ -98,7 +62,7 @@ function [x, profit] = ipCfpm(availableResourcesInFed, costsOfCPsInFed, vmInfo, 
     optimize(cons,-objective,opt);
 
     % federation profit
-    profit = value(objective);
+    profit = round(value(objective), 4);
 
     %V Ms required from each CP
     x = value(x);
