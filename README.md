@@ -3,7 +3,7 @@ Setup requires installation of the following:
 - MATLAB Engine API 
     https://www.mathworks.com/help/matlab/matlab_external/install-the-matlab-engine-for-python.html
     https://www.mathworks.com/help/matlab/matlab_external/python-setup-script-to-install-matlab-engine-api.html
-- CVX http://cvxr.com/cvx/
+- YALMIP https://yalmip.github.io/download/
 - Gurobi https://www.gurobi.com/academia/academic-program-and-licenses/
 - Python 3.9.x
 
